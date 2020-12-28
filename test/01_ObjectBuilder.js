@@ -340,5 +340,10 @@ describe("ObjectBuilder", function() {
 			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
 		});
 
+		it(`should initialize objectBuilder`, function() {
+			let res = objectBuilder.init({ test: "value", nested: { test: "value"}});
+			expect(res.value()).to.deep.eq({ test: "value", nested: { test: "value"} });
+		});
+
 	});
 });

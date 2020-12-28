@@ -9,6 +9,8 @@ const ACTIONS_INSERT_AT = "insertAt";
 const ACTIONS_SET_AT = "setAt";
 const ACTIONS_INSERT_BEFORE = "insertBefore";
 const ACTIONS_INSERT_AFTER = "insertAfter";
+// const ACTIONS_MOVE = "move";
+// const ACTIONS_COPY = "copy";
 
 // Define all action handlers
 // You can specify either a function or string to have an alias
@@ -326,10 +328,29 @@ function removeEmptyValues(obj) {
 	}, {});
 }
 
-function compile(actions) {
+function convertActionsToObject(actions) {
 	return Object.entries(actions).reduce(function(obj, [key, value]){
 		return objectPath.set(obj, key, value);
 	}, {});
+}
+
+function convertObjectToActions(obj) {
+  var res = {};
+  function recurse(obj, current) {
+    for (var key in obj) {
+      var value = obj[key];
+      var newKey = (current ? current + '.' + key : key);  // joined key with dot
+      if (value && typeof value === 'object' && !(value instanceof Date)) {
+        recurse(value, newKey);  // it's a nested object, so do it again
+      } else {
+        res[newKey] = value;  // it's not an object, so set the property
+      }
+    }
+  }
+  recurse(obj);
+  return Object.entries(res).reduce(function(actions, [key, value]){
+		return actions.concat(createAction(ACTIONS_SET, key, value));
+	}, []);
 }
 
 function prepareActionFilters(filters, fuzzy=false) {
@@ -381,6 +402,13 @@ function processActionFilter(filter) {
 	return [filter.toString()];
 }
 
+function createAction(type, key, value) {
+	if(Array.isArray(value)) {
+		return { type, data: { key, value } };
+	}
+	return { type, data: { key, value: [value] } };
+}
+
 const initObjectBuilder = function(initActions = []) {
 	let actions = initActions;
 
@@ -388,7 +416,7 @@ const initObjectBuilder = function(initActions = []) {
 
 	Object.entries(ACTIONS).forEach(function(entry) {
 		ObjectBuilder[entry[0]] = function(key, ...value) {
-			actions.push({ type: entry[0], data: { key, value } });
+			actions.push(createAction(entry[0], key, value));
 			return this;
 		};
 	});
@@ -397,7 +425,7 @@ const initObjectBuilder = function(initActions = []) {
 		let res = actions.reduce(function(projection, action) {
 			return ACTIONS[action.type](projection, action.data);
 		}, {});
-		res = compile(res);
+		res = convertActionsToObject(res);
 		res = removeEmptyValues(res);
 		return res;
 	};
@@ -439,10 +467,20 @@ const initObjectBuilder = function(initActions = []) {
 		throw new Error(`Unknown action filtering condition`);
 	};
 
+	// Clears all actions
 	ObjectBuilder.clear = function() {
 		actions = [];
 		return this;
 	};
+
+	// Initializes builder based on the passed object
+	ObjectBuilder.init = function(obj=null) {
+		if(!obj) {
+			throw new Error(`Object not specified to be initialized`);
+		}
+		actions = convertObjectToActions(obj);
+		return this;
+	}
 
 	// This is now a thenable class
 	// It means that the query builder can be used to construct the object,

@@ -5,7 +5,8 @@ const ACTIONS_SET = "set";
 const ACTIONS_APPEND = "append";
 const ACTIONS_DELETE = "delete";
 const ACTIONS_REMOVE = "remove";
-// const ACTIONS_INSERT_AT = "insertAt";
+const ACTIONS_INSERT_AT = "insertAt";
+// const ACTIONS_SET_AT = "setAt";
 // const ACTIONS_INSERT_BEFORE = "insertBefore";
 // const ACTIONS_INSERT_AFTER = "insertAfter";
 // const ACTIONS_SORT = "sort";
@@ -60,7 +61,6 @@ const ACTION_HANDLERS = {
 		return objectPath.push(projection, data.key, data.value[0]);
 	},
 	[ACTIONS_REMOVE]: function(projection, data) {
-
 		if(!objectPath.has(projection, data.key)) {
 			throw new Error(`Can't remove items from ${data.key}! Array doesn't exist`);
 		}
@@ -89,6 +89,28 @@ const ACTION_HANDLERS = {
 		});
 
 		return objectPath.set(projection, data.key, newArray);
+	},
+	[ACTIONS_INSERT_AT]: function(projection, data) {
+		if(!objectPath.has(projection, data.key)) {
+			throw new Error(`Can't insert item in array ${data.key}! Array doesn't exist`);
+		}
+
+		if (!Array.isArray(projection[data.key])) {
+			throw new Error(`Can't insert item in array ${data.key}! It's not an array`);
+		}
+		
+		let index = data.value[0];
+
+		if(typeof index !== "number") {
+			throw new Error(`Can't insert item in array ${data.key}! Index is not a number`);
+		}
+		
+		if(index < 0) {
+			throw new Error(`Can't insert item in array ${data.key}! Index can't be negative`);
+		}
+
+		let currentArray =  objectPath.get(projection, data.key);
+		return objectPath.set(projection, data.key, [...currentArray.slice(0,index), ...data.value.slice(1), ...currentArray.slice(index)]);
 	},
 };
 

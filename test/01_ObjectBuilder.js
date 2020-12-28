@@ -209,5 +209,25 @@ describe("ObjectBuilder", function() {
 			expect(cloned.value()).to.deep.eq({ test: { key1: { subkey: "value" }, key2: { subkey: "value" }}});
 		});
 
+		it(`should insert an item in the array at index 1`, function() {
+			let res = objectBuilder.append("test", "key1", "key3").insertAt("test", 1, "key2");
+			expect(res.value()).to.deep.eq({ test: ["key1", "key2", "key3"]});
+		});
+
+		it(`should set an item in the array at index 1"`, function() {
+			let res = objectBuilder.append("test", "key1", "key3").setAt("test", 1, "key2");
+			expect(res.value()).to.eq({ test: ["key1", "key2"]});
+		});
+
+		it(`should insert an item in the array before "key3"`, function() {
+			let res = objectBuilder.append("test", "key1", "key3").insertBefore("test", "key3", "key2");
+			expect(res.value()).to.eq({ test: ["key1", "key2", "key3"]});
+		});
+
+		it(`should insert an item in the array after "key2"`, function() {
+			let res = objectBuilder.append("test", "key1", "key2").insertAfter("test", "key2", "key3");
+			expect(res.value()).to.eq({ test: ["key1", "key2", "key3"]});
+		});
+
 	});
 });

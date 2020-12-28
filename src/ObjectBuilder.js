@@ -9,8 +9,7 @@ const ACTIONS_INSERT_AT = "insertAt";
 const ACTIONS_SET_AT = "setAt";
 const ACTIONS_INSERT_BEFORE = "insertBefore";
 const ACTIONS_INSERT_AFTER = "insertAfter";
-// const ACTIONS_MOVE = "move";
-// const ACTIONS_COPY = "copy";
+const ACTIONS_MOVE = "move";
 
 // Define all action handlers
 // You can specify either a function or string to have an alias
@@ -222,6 +221,34 @@ const ACTION_HANDLERS = {
 		}
 
 		projection[data.key] = [...projection[data.key].slice(0,index+1), ...data.value.slice(1), ...projection[data.key].slice(index+1)]
+
+		return projection;
+	},
+	[ACTIONS_MOVE]: function(projection, data) {
+		if(!data.key) {
+			throw new Error(`Can't move! No key specified.`);
+		}
+
+		if(!(data.key in projection)) {
+			throw new Error(`Can't move ${data.key}! Key doesn't exist`);
+		}
+
+		if(typeof data.key !== "string" && typeof data.key !== "number") {
+			throw new Error(`Can't move ${data.key}! Source must be a string or a number!`);
+		}
+		
+		if(data.value.length === 0) {
+			throw new Error(`Can't move ${data.key}! You need to specify the source and destination of keys!`);
+		}
+		
+		if(typeof data.value[0] !== "string" && typeof data.value[0] !== "number") {
+			throw new Error(`Can't move ${data.key}! Destination must be a string or a number!`);
+		}
+
+		let value = projection[data.key];
+		projection[data.value[0]] = value;
+
+		delete projection[data.key];
 
 		return projection;
 	},

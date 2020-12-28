@@ -345,5 +345,10 @@ describe("ObjectBuilder", function() {
 			expect(res.value()).to.deep.eq({ test: "value", nested: { test: "value"} });
 		});
 
+		it(`should move value from key1 to key2`, function() {
+			let res = objectBuilder.init({ key1: "value"}).move("key1","key2");
+			expect(res.value()).to.deep.eq({ key2: "value" });
+		});
+
 	});
 });

@@ -1,0 +1,39 @@
+{
+  "name": "node-simple-object-builder",
+  "version": "0.1.0",
+  "description": "Object builder that allows you to create, manipulate, and clone objects in an event-streamed fashion",
+  "keywords": [
+    "nodejs",
+    "object builder",
+    "js object",
+    "javascript object",
+    "javascript object clone"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "mocha": ".\\node_modules\\.bin\\mocha ./test",
+    "mocha-watch": ".\\node_modules\\.bin\\nodemon --ext js --watch ./ --exec 'npm run mocha' --delay 1",
+    "prettier": "prettier --no-config --print-width 120 --parser flow --use-tabs --write *.js **/*.js"
+  },
+  "homepage": "https://github.com/lescinskiscom/node-simple-object-builder#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lescinskiscom/node-simple-object-builder"
+  },
+  "author": {
+    "name": "Ringolds Lescinskis",
+    "email": "ringolds@lescinskis.com",
+    "url": "https://github.com/lescinskiscom"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "object-path-immutable": "^4.1.1"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "dotenv": "^6.0.0",
+    "mocha": "^8.2.1",
+    "nodemon": "^2.0.6",
+    "prettier": "^1.13.7"
+  }
+}

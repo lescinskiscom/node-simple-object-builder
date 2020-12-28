@@ -53,6 +53,7 @@ describe("ObjectBuilder", function() {
 
 		it(`should contain a key ${key}`, function() {
 			let res = objectBuilder.set(key, 1234).value();
+			console.log(res);
 			expect(res).to.have.key(key);
 		});
 

@@ -1,4 +1,4 @@
-const objectPath = require("./PatchedObjectPathImmutable");
+const objectPath = require("object-path-immutable");
 
 // Define all actions that can be called
 const ACTIONS_SET = "set";
@@ -9,8 +9,6 @@ const ACTIONS_INSERT_AT = "insertAt";
 const ACTIONS_SET_AT = "setAt";
 const ACTIONS_INSERT_BEFORE = "insertBefore";
 const ACTIONS_INSERT_AFTER = "insertAfter";
-// const ACTIONS_SORT = "sort";
-
 
 // Define all action handlers
 // You can specify either a function or string to have an alias
@@ -19,24 +17,32 @@ const ACTION_HANDLERS = {
 		if(data.value.length === 0) {
 			throw new Error(`Can't set an empty value to ${data.key}!`);
 		}
-		return objectPath.set(projection, data.key, data.value[0]);
+		projection[data.key] = data.value[0];
+		return projection;
 	},
 	[ACTIONS_DELETE]: function(projection, data) {
-		projection = objectPath.del(projection, data.key);
-		if(data.value.length == 0) {
-			return projection;
+		if(!data.key) {
+			throw new Error(`Can't delete key! No key specified.`);
 		}
-		data.value.forEach(function(value){
-			projection = objectPath.del(projection, value);
-		});
+		let keys = [data.key];
+
+		if(data.value.length > 0) {
+			keys = keys.concat(data.value);
+		}
+		
+		keys.forEach(function(key) {
+			delete projection[key];
+		})
+
 		return projection;
 	},
 	// Deletes specified items from array
 	[ACTIONS_APPEND]: function(projection, data) {
-		
-		projection = objectPath.ensureExists(projection, data.key, []);
+		if(!data.key) {
+			throw new Error(`Can't append to array! No key specified.`);
+		}
 
-		if (!Array.isArray(projection[data.key])) {
+		if (data.key in projection && !Array.isArray(projection[data.key])) {
 			throw new Error(`Can't append to ${data.key}! It's not an array`);
 		}
 
@@ -44,24 +50,31 @@ const ACTION_HANDLERS = {
 			throw new Error(`Can't append an empty value to ${data.key}!`);
 		}
 
+		if(!(data.key in projection)) {
+			projection[data.key] = [];
+		}
+
 		if(data.value.length === 1 && Array.isArray(data.value[0])) {
-			data.value[0].forEach(function(value) {
-				projection = objectPath.push(projection, data.key, value);
-			});
+			projection[data.key] = projection[data.key].concat(data.value[0]);
 			return projection;
 		}
 		
 		if(data.value.length > 1) {
-			data.value.forEach(function(value) {
-				projection = objectPath.push(projection, data.key, value);
-			});
+			projection[data.key] = projection[data.key].concat(data.value);
 			return projection;
 		}
-		
-		return objectPath.push(projection, data.key, data.value[0]);
+
+		projection[data.key] = projection[data.key].concat(data.value[0]);
+
+		return projection;
 	},
 	[ACTIONS_REMOVE]: function(projection, data) {
-		if(!objectPath.has(projection, data.key)) {
+
+		if(!data.key) {
+			throw new Error(`Can't remove from array! No key specified.`);
+		}
+
+		if(!(data.key in projection)) {
 			throw new Error(`Can't remove items from ${data.key}! Array doesn't exist`);
 		}
 
@@ -73,25 +86,25 @@ const ACTION_HANDLERS = {
 			throw new Error(`No items have been specified to be removed from ${data.key}`);
 		}
 
-		if(!objectPath.has(projection, data.key)) {
-			return projection;
-		}
-
 		if(data.value.length === 1 && Array.isArray(data.value[0])) {
-			let newArray = objectPath.get(projection, data.key).filter(function(item){
+			projection[data.key] = projection[data.key].filter(function(item){
 				return data.value.indexOf(item) === -1;
 			});
-			return objectPath.set(projection, data.key, newArray);
+			return projection;
 		}
 		
-		let newArray = objectPath.get(projection, data.key).filter(function(item){
+		projection[data.key] = projection[data.key].filter(function(item){
 			return data.value.indexOf(item) === -1;
 		});
 
-		return objectPath.set(projection, data.key, newArray);
+		return projection;
 	},
 	[ACTIONS_INSERT_AT]: function(projection, data) {
-		if(!objectPath.has(projection, data.key)) {
+		if(!data.key) {
+			throw new Error(`Can't insert item in array! No key specified.`);
+		}
+
+		if(!(data.key in projection)) {
 			throw new Error(`Can't insert item in array ${data.key}! Array doesn't exist`);
 		}
 
@@ -109,11 +122,16 @@ const ACTION_HANDLERS = {
 			throw new Error(`Can't insert item in array ${data.key}! Index can't be negative`);
 		}
 
-		let currentArray =  objectPath.get(projection, data.key);
-		return objectPath.set(projection, data.key, [...currentArray.slice(0,index), ...data.value.slice(1), ...currentArray.slice(index)]);
+		projection[data.key] =  [...projection[data.key].slice(0,index), ...data.value.slice(1), ...projection[data.key].slice(index)];
+		
+		return projection;
 	},
 	[ACTIONS_SET_AT]: function(projection, data) {
-		if(!objectPath.has(projection, data.key)) {
+		if(!data.key) {
+			throw new Error(`Can't set item in array! No key specified.`);
+		}
+
+		if(!(data.key in projection)) {
 			throw new Error(`Can't set item in array ${data.key}! Array doesn't exist`);
 		}
 
@@ -131,11 +149,16 @@ const ACTION_HANDLERS = {
 			throw new Error(`Can't set item in array ${data.key}! Index can't be negative`);
 		}
 
-		let currentArray =  objectPath.get(projection, data.key);
-		return objectPath.set(projection, data.key, [...currentArray.slice(0,index), ...data.value.slice(1), ...currentArray.slice(index+data.value.length-1)]);
+		projection[data.key] = [...projection[data.key].slice(0,index), ...data.value.slice(1), ...projection[data.key].slice(index+data.value.length-1)];
+
+		return projection;
 	},
 	[ACTIONS_INSERT_BEFORE]: function(projection, data) {
-		if(!objectPath.has(projection, data.key)) {
+		if(!data.key) {
+			throw new Error(`Can't insert before item in array! No key specified.`);
+		}
+
+		if(!(data.key in projection)) {
 			throw new Error(`Can't insert before item in array ${data.key}! Array doesn't exist`);
 		}
 
@@ -148,24 +171,29 @@ const ACTION_HANDLERS = {
 		}
 
 		let index = -1;
-		let currentArray =  objectPath.get(projection, data.key);
 
 		if(typeof data.value[0] === "object") {
-			index = currentArray.findIndex(function(item){
+			index = projection[data.key].findIndex(function(item){
 				return doesItemMatch(item, data.value[0]);
 			});
 		} else {
-			index = currentArray.indexOf(data.value[0]);
+			index = projection[data.key].indexOf(data.value[0]);
 		}
 
 		if(index < 0) {
 			throw new Error(`Can't insert before item in array ${data.key}! Item is not found!`);
 		}
 
-		return objectPath.set(projection, data.key, [...currentArray.slice(0,index), ...data.value.slice(1), ...currentArray.slice(index)]);
+		projection[data.key] = [...projection[data.key].slice(0,index), ...data.value.slice(1), ...projection[data.key].slice(index)];
+
+		return projection;
 	},
 	[ACTIONS_INSERT_AFTER]: function(projection, data) {
-		if(!objectPath.has(projection, data.key)) {
+		if(!data.key) {
+			throw new Error(`Can't insert before item in array! No key specified.`);
+		}
+
+		if(!(data.key in projection)) {
 			throw new Error(`Can't insert before item in array ${data.key}! Array doesn't exist`);
 		}
 
@@ -178,21 +206,22 @@ const ACTION_HANDLERS = {
 		}
 
 		let index = -1;
-		let currentArray =  objectPath.get(projection, data.key);
 
 		if(typeof data.value[0] === "object") {
-			index = currentArray.findIndex(function(item){
+			index = projection[data.key].findIndex(function(item){
 				return doesItemMatch(item, data.value[0]);
 			});
 		} else {
-			index = currentArray.indexOf(data.value[0]);
+			index = projection[data.key].indexOf(data.value[0]);
 		}
 
 		if(index < 0) {
 			throw new Error(`Can't insert before item in array ${data.key}! Item is not found!`);
 		}
 
-		return objectPath.set(projection, data.key, [...currentArray.slice(0,index+1), ...data.value.slice(1), ...currentArray.slice(index+1)]);
+		projection[data.key] = [...projection[data.key].slice(0,index+1), ...data.value.slice(1), ...projection[data.key].slice(index+1)]
+
+		return projection;
 	},
 };
 
@@ -220,7 +249,7 @@ function doesItemMatch(item, match) {
 		return { key: value[0], value: value[1] }
 	});
 	let filteredValues = values.filter(function(value){
-		let res = objectPath.get(item, value.key);
+		let res = item[value.key];
 
 		if(typeof value.value !== "object") {
 			return res === value.value;
@@ -297,6 +326,12 @@ function removeEmptyValues(obj) {
 	}, {});
 }
 
+function compile(actions) {
+	return Object.entries(actions).reduce(function(obj, [key, value]){
+		return objectPath.set(obj, key, value);
+	}, {});
+}
+
 function prepareActionFilters(filters, fuzzy=false) {
 	return filters.map(function(expr){
 		if(!fuzzy) {
@@ -362,6 +397,7 @@ const initObjectBuilder = function(initActions = []) {
 		let res = actions.reduce(function(projection, action) {
 			return ACTIONS[action.type](projection, action.data);
 		}, {});
+		res = compile(res);
 		res = removeEmptyValues(res);
 		return res;
 	};

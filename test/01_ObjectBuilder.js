@@ -234,6 +234,11 @@ describe("ObjectBuilder", function() {
 			expect(res.value()).to.deep.eq({ test: ["key1", "key2", "key3"]});
 		});
 
+		it(`should insert an item in the array before item with id=2`, function() {
+			let res = objectBuilder.append("test", { id: 0 }, { id: 2 },).insertBefore("test", { id: 2 }, { id: 1 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
+
 		it(`should insert an item in the array after "key2"`, function() {
 			let res = objectBuilder.append("test", "key1", "key2").insertAfter("test", "key2", "key3");
 			expect(res.value()).to.deep.eq({ test: ["key1", "key2", "key3"]});

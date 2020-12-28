@@ -244,6 +244,21 @@ describe("ObjectBuilder", function() {
 			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }]});
 		});
 
+		it(`should insert an item in the array before item with id=2 and valid=true`, function() {
+			let res = objectBuilder.append("test", { id: 0 }, { id: 2, valid: true }).insertBefore("test", { id: 2, valid: true }, { id: 1 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2, valid: true }]});
+		});
+
+		it(`should insert multiple items in the array before item with id=3 and valid=true`, function() {
+			let res = objectBuilder.append("test", { id: 0 }, { id: 3, valid: true }).insertBefore("test", { id: 3, valid: true }, { id: 1 }, { id: 2 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3, valid: true }]});
+		});
+
+		it(`should fail to insert an item in the array before item with id=2 and valid=true`, function() {
+			let res = objectBuilder.append("test", { id: 0 }, { id: 2 }).insertBefore("test", { id: 2, valid: true }, { id: 1 });
+			expect(res.value.bind()).to.throw("Can't insert before item in array test! Item is not found!");
+		});
+
 		it(`should insert an item in the array after "key2"`, function() {
 			let res = objectBuilder.append("test", "key1", "key2").insertAfter("test", "key2", "key3");
 			expect(res.value()).to.deep.eq({ test: ["key1", "key2", "key3"]});
@@ -258,6 +273,21 @@ describe("ObjectBuilder", function() {
 			let res = objectBuilder.append("test", { id: 0 }, { id: 1 }).insertAfter("test", { id: 1 }, { id: 2 }, { id: 3 });
 			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }]});
 		});
+
+		it(`should insert an item in the array after item with id=1 and valid=true`, function() {
+			let res = objectBuilder.append("test", { id: 0 }, { id: 1, valid: true }).insertAfter("test", { id: 1, valid: true }, { id: 2 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1, valid: true }, { id: 2 }]});
+		});
+
+		it(`should insert multiple items in the array after item with id=1 and valid=true`, function() {
+			let res = objectBuilder.append("test", { id: 0 }, { id: 1, valid: true }).insertAfter("test", { id: 1, valid: true }, { id: 2 }, { id: 3 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1, valid: true }, { id: 2 }, { id: 3 }]});
+		});
+
+		it(`should fail to insert an item in the array after item with id=1 and valid=true`, function() {
+			let res = objectBuilder.append("test", { id: 0 }, { id: 1 }).insertAfter("test", { id: 1, valid: true }, { id: 2 });
+			expect(res.value.bind()).to.throw("Can't insert before item in array test! Item is not found!");
+		});		
 
 	});
 });

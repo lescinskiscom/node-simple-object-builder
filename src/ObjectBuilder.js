@@ -151,16 +151,15 @@ const ACTION_HANDLERS = {
 		let currentArray =  objectPath.get(projection, data.key);
 
 		if(typeof data.value[0] === "object") {
-			let [key, value] = Object.entries(data.value[0])[0];
 			index = currentArray.findIndex(function(item){
-				return objectPath.get(item, key) === value;
+				return doesItemMatch(item, data.value[0]);
 			});
 		} else {
 			index = currentArray.indexOf(data.value[0]);
 		}
 
 		if(index < 0) {
-			throw new Error(`Can't insert before item in array ${data.key}! `);
+			throw new Error(`Can't insert before item in array ${data.key}! Item is not found!`);
 		}
 
 		return objectPath.set(projection, data.key, [...currentArray.slice(0,index), ...data.value.slice(1), ...currentArray.slice(index)]);
@@ -182,16 +181,15 @@ const ACTION_HANDLERS = {
 		let currentArray =  objectPath.get(projection, data.key);
 
 		if(typeof data.value[0] === "object") {
-			let [key, value] = Object.entries(data.value[0])[0];
 			index = currentArray.findIndex(function(item){
-				return objectPath.get(item, key) === value;
+				return doesItemMatch(item, data.value[0]);
 			});
 		} else {
 			index = currentArray.indexOf(data.value[0]);
 		}
 
 		if(index < 0) {
-			throw new Error(`Can't insert before item in array ${data.key}! `);
+			throw new Error(`Can't insert before item in array ${data.key}! Item is not found!`);
 		}
 
 		return objectPath.set(projection, data.key, [...currentArray.slice(0,index+1), ...data.value.slice(1), ...currentArray.slice(index+1)]);
@@ -217,7 +215,17 @@ const ACTIONS = Object.entries(ACTION_HANDLERS).reduce(function(map, action) {
 	}
 }, {});
 
-const removeEmptyValues = function(obj) {
+function doesItemMatch(item, match) {
+	let values = Object.entries(match).map(function(value){
+		return { key: value[0], value: value[1] }
+	});
+	let filteredValues = values.filter(function(value){
+		return objectPath.get(item, value.key) === value.value;
+	});
+	return filteredValues.length === values.length;
+}
+
+function removeEmptyValues(obj) {
 	return Object.keys(obj)
 		.filter(function(key) {
 			return obj[key] !== null;

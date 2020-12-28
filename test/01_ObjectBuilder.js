@@ -287,7 +287,57 @@ describe("ObjectBuilder", function() {
 		it(`should fail to insert an item in the array after item with id=1 and valid=true`, function() {
 			let res = objectBuilder.append("test", { id: 0 }, { id: 1 }).insertAfter("test", { id: 1, valid: true }, { id: 2 });
 			expect(res.value.bind()).to.throw("Can't insert before item in array test! Item is not found!");
-		});		
+		});	
+		
+		it(`should insert an item in the array after an item where id>=1`, function() {
+			let res = objectBuilder.set("test", [{ id: 0 }, { id: 1 }]).insertAfter("test", { id: { gte: 1} }, { id: 2 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
+
+		it(`should insert an item in the array after an item where id>0`, function() {
+			let res = objectBuilder.set("test", [{ id: 0 }, { id: 1 }]).insertAfter("test", { id: { gt: 0} }, { id: 2 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
+
+		it(`should insert an item in the array after an item where id<2`, function() {
+			let res = objectBuilder.set("test", [{ id: 0 }, { id: 2 }]).insertAfter("test", { id: { lt: 2} }, { id: 1 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
+
+		it(`should insert an item in the array after an item where id<=1`, function() {
+			let res = objectBuilder.set("test", [{ id: 2 }, { id: 0 }]).insertAfter("test", { id: { lte: 2 } }, { id: 1 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 2 }, { id: 1 }, { id: 0 }]});
+		});
+
+		it(`should insert an item in the array after an item where id==1`, function() {
+			let res = objectBuilder.set("test", [{ id: 0 }, { id: 1 }]).insertAfter("test", { id: { eq: 1} }, { id: 2 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
+
+		it(`should insert an item in the array after an item where id==1 (alternative)`, function() {
+			let res = objectBuilder.set("test", [{ id: 0 }, { id: 1 }]).insertAfter("test", { id: { is: 1} }, { id: 2 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
+
+		it(`should insert an item in the array after an item where id!=0`, function() {
+			let res = objectBuilder.set("test", [{ id: 0 }, { id: 1 }]).insertAfter("test", { id: { neq: 0} }, { id: 2 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
+
+		it(`should insert an item in the array after an item where id!=0 (alternative)`, function() {
+			let res = objectBuilder.set("test", [{ id: 0 }, { id: 1 }]).insertAfter("test", { id: { not: 0} }, { id: 2 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
+
+		it(`should insert an item in the array after an item where id in [1,2,3]`, function() {
+			let res = objectBuilder.set("test", [{ id: 0 }, { id: 1 }]).insertAfter("test", { id: { in: [1,2,3]} }, { id: 2 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
+
+		it(`should insert an item in the array after an item where id not in [1,2,3]`, function() {
+			let res = objectBuilder.set("test", [{ id: 0 }, { id: 2 }]).insertAfter("test", { id: { nin: [1,2,3]} }, { id: 1 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
 
 	});
 });

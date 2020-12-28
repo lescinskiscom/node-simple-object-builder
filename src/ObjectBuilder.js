@@ -8,7 +8,7 @@ const ACTIONS_REMOVE = "remove";
 const ACTIONS_INSERT_AT = "insertAt";
 const ACTIONS_SET_AT = "setAt";
 const ACTIONS_INSERT_BEFORE = "insertBefore";
-// const ACTIONS_INSERT_AFTER = "insertAfter";
+const ACTIONS_INSERT_AFTER = "insertAfter";
 // const ACTIONS_SORT = "sort";
 
 
@@ -164,6 +164,37 @@ const ACTION_HANDLERS = {
 		}
 
 		return objectPath.set(projection, data.key, [...currentArray.slice(0,index), ...data.value.slice(1), ...currentArray.slice(index)]);
+	},
+	[ACTIONS_INSERT_AFTER]: function(projection, data) {
+		if(!objectPath.has(projection, data.key)) {
+			throw new Error(`Can't insert before item in array ${data.key}! Array doesn't exist`);
+		}
+
+		if (!Array.isArray(projection[data.key])) {
+			throw new Error(`Can't insert before item in array ${data.key}! It's not an array`);
+		}
+		
+		if(data.value.length < 2) {
+			throw new Error(`Can't insert before item in array ${data.key}! You need to specify an item and at least one value to be inserted before the item!`);
+		}
+
+		let index = -1;
+		let currentArray =  objectPath.get(projection, data.key);
+
+		if(typeof data.value[0] === "object") {
+			let [key, value] = Object.entries(data.value[0])[0];
+			index = currentArray.findIndex(function(item){
+				return objectPath.get(item, key) === value;
+			});
+		} else {
+			index = currentArray.indexOf(data.value[0]);
+		}
+
+		if(index < 0) {
+			throw new Error(`Can't insert before item in array ${data.key}! `);
+		}
+
+		return objectPath.set(projection, data.key, [...currentArray.slice(0,index+1), ...data.value.slice(1), ...currentArray.slice(index+1)]);
 	},
 };
 

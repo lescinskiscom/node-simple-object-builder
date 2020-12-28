@@ -235,13 +235,28 @@ describe("ObjectBuilder", function() {
 		});
 
 		it(`should insert an item in the array before item with id=2`, function() {
-			let res = objectBuilder.append("test", { id: 0 }, { id: 2 },).insertBefore("test", { id: 2 }, { id: 1 });
+			let res = objectBuilder.append("test", { id: 0 }, { id: 2 }).insertBefore("test", { id: 2 }, { id: 1 });
 			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
+
+		it(`should insert multiple items in the array before item with id=3`, function() {
+			let res = objectBuilder.append("test", { id: 0 }, { id: 3 }).insertBefore("test", { id: 3 }, { id: 1 }, { id: 2 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }]});
 		});
 
 		it(`should insert an item in the array after "key2"`, function() {
 			let res = objectBuilder.append("test", "key1", "key2").insertAfter("test", "key2", "key3");
 			expect(res.value()).to.deep.eq({ test: ["key1", "key2", "key3"]});
+		});
+
+		it(`should insert an item in the array after item with id=1`, function() {
+			let res = objectBuilder.append("test", { id: 0 }, { id: 1 }).insertAfter("test", { id: 1 }, { id: 2 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }]});
+		});
+
+		it(`should insert multiple items in the array after item with id=1`, function() {
+			let res = objectBuilder.append("test", { id: 0 }, { id: 1 }).insertAfter("test", { id: 1 }, { id: 2 }, { id: 3 });
+			expect(res.value()).to.deep.eq({ test: [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }]});
 		});
 
 	});

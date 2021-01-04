@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const ObjectBuilder = require("../src/ObjectBuilder");
+const ObjectBuilder = require("../src");
 
 describe("ObjectBuilder", function() {
 	describe("Initialization", function() {

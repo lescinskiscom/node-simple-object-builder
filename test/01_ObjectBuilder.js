@@ -345,8 +345,33 @@ describe("ObjectBuilder", function() {
 			expect(res.value()).to.deep.eq({ test: "value", nested: { test: "value"} });
 		});
 
+		it(`should copy value from key1 to key2`, function() {
+			let res = objectBuilder.init({ key1: "value"}).copy("key1","key2");
+			expect(res.value()).to.deep.eq({ key1: "value", key2: "value" });
+		});
+		
 		it(`should move value from key1 to key2`, function() {
-			let res = objectBuilder.init({ key1: "value"}).move("key1","key2");
+			let res = objectBuilder.init({ key1: "value"}).copy("key1","key2", { deleteSource: true });
+			expect(res.value()).to.deep.eq({ key2: "value" });
+		});
+
+		it(`should not copy value from key1 to key2 because key2 exists`, function() {
+			let res = objectBuilder.init({ key1: "value", key2: null }).copy("key1","key2");
+			expect(res.value).to.throw("Destination key already exists");
+		});
+
+		it(`should not move value from key1 to key2 because key2 exists`, function() {
+			let res = objectBuilder.init({ key1: "value", key2: null }).copy("key1","key2", { deleteSource: true });
+			expect(res.value).to.throw("Destination key already exists");
+		});
+
+		it(`should copy value from key1 to key2 even if key2 exists`, function() {
+			let res = objectBuilder.init({ key1: "value"}).copy("key1","key2", { overwrite: true });
+			expect(res.value()).to.deep.eq({ key1: "value", key2: "value" });
+		});
+		
+		it(`should move value from key1 to key2 even if key2 exists`, function() {
+			let res = objectBuilder.init({ key1: "value"}).copy("key1","key2", { deleteSource: true, overwrite: true });
 			expect(res.value()).to.deep.eq({ key2: "value" });
 		});
 

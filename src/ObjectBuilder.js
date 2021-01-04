@@ -9,7 +9,7 @@ const ACTIONS_INSERT_AT = "insertAt";
 const ACTIONS_SET_AT = "setAt";
 const ACTIONS_INSERT_BEFORE = "insertBefore";
 const ACTIONS_INSERT_AFTER = "insertAfter";
-const ACTIONS_MOVE = "move";
+const ACTIONS_COPY = "copy";
 
 // Define all action handlers
 // You can specify either a function or string to have an alias
@@ -224,31 +224,46 @@ const ACTION_HANDLERS = {
 
 		return projection;
 	},
-	[ACTIONS_MOVE]: function(projection, data) {
+	[ACTIONS_COPY]: function(projection, data) {
 		if(!data.key) {
-			throw new Error(`Can't move! No key specified.`);
+			throw new Error(`Can't copy! No key specified.`);
 		}
 
 		if(!(data.key in projection)) {
-			throw new Error(`Can't move ${data.key}! Key doesn't exist`);
+			throw new Error(`Can't copy ${data.key}! Key doesn't exist`);
 		}
 
 		if(typeof data.key !== "string" && typeof data.key !== "number") {
-			throw new Error(`Can't move ${data.key}! Source must be a string or a number!`);
+			throw new Error(`Can't copy ${data.key}! Source must be a string or a number!`);
 		}
 		
 		if(data.value.length === 0) {
-			throw new Error(`Can't move ${data.key}! You need to specify the source and destination of keys!`);
+			throw new Error(`Can't copy ${data.key}! You need to specify the source and destination of keys!`);
 		}
 		
 		if(typeof data.value[0] !== "string" && typeof data.value[0] !== "number") {
-			throw new Error(`Can't move ${data.key}! Destination must be a string or a number!`);
+			throw new Error(`Can't copy ${data.key}! Destination must be a string or a number!`);
+		}
+		
+		let params = {};
+		
+		if(data.value.length > 1 && typeof data.value[1] === "object") {
+			params = data.value[1];
+		}
+		
+		let overwrite = "overwrite" in params ? params.overwrite : false;
+		let deleteSource = "deleteSource" in params ? params.deleteSource : false;
+
+		if(!overwrite && data.value[0] in projection) {
+			throw new Error(`Can't copy ${data.key}! Destination key already exists!`);
 		}
 
 		let value = projection[data.key];
 		projection[data.value[0]] = value;
 
-		delete projection[data.key];
+		if(deleteSource) {
+			delete projection[data.key];
+		}
 
 		return projection;
 	},

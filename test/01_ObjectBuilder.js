@@ -375,5 +375,29 @@ describe("ObjectBuilder", function() {
 			expect(res.value()).to.deep.eq({ key2: "value" });
 		});
 
+		it(`should update key1 value with a string`, function() {
+			let res = objectBuilder.init({ key1: "value", key2: "value2" }).update("key1","value1");
+			expect(res.value()).to.deep.eq({ key1: "value1", key2: "value2" });
+		});
+
+		it(`should update key1 value using a function`, function() {
+			let res = objectBuilder.init({ key1: "value", key2: "value2" }).update("key1",function(value) {
+				return "value1"
+			});
+			expect(res.value()).to.deep.eq({ key1: "value1", key2: "value2" });
+		});		
+
+		it(`should update key1, key2 value with a string`, function() {
+			let res = objectBuilder.init({ key1: "value", key2: "value2" }).update("key","value");
+			expect(res.value()).to.deep.eq({ key1: "value", key2: "value" });
+		});
+
+		it(`should update key1, key2 value using a function`, function() {
+			let res = objectBuilder.init({ key1: "value", key2: "value2" }).update("key",function(value) {
+				return "value"
+			});
+			expect(res.value()).to.deep.eq({ key1: "value", key2: "value" });
+		});		
+
 	});
 });

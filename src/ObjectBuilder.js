@@ -284,10 +284,11 @@ const ACTION_HANDLERS = {
 		}
 		
 		let fuzzy = "fuzzy" in params ? params.fuzzy : true;
+		let exact = "exact" in params ? params.exact : false;
 
 		let keys = [data.key];
 		
-		if(fuzzy) {
+		if(!exact || fuzzy) {
 			let pattern = new RegExp(data.key);
 			keys = Object.keys(projection).filter(function(key){
 				return key.match(pattern);
@@ -424,7 +425,8 @@ function convertObjectToActions(obj) {
       var newKey = (current ? current + '.' + key : key);  // joined key with dot
       if (value && typeof value === 'object' && !(value instanceof Date)) {
         recurse(value, newKey);  // it's a nested object, so do it again
-      } else {
+			}
+			 else {
         res[newKey] = value;  // it's not an object, so set the property
       }
     }

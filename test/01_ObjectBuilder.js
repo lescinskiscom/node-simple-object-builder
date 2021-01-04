@@ -53,7 +53,6 @@ describe("ObjectBuilder", function() {
 
 		it(`should contain a key ${key}`, function() {
 			let res = objectBuilder.set(key, 1234).value();
-			console.log(res);
 			expect(res).to.have.key(key);
 		});
 
@@ -398,6 +397,14 @@ describe("ObjectBuilder", function() {
 			});
 			expect(res.value()).to.deep.eq({ key1: "value", key2: "value" });
 		});		
+
+		it(`should be able to clone an update function`, function() {
+			let res = objectBuilder.init({ key1: "value" }).update("key1",function(value) {
+				return "value1"
+			}).clone();
+			expect(res.value()).to.deep.eq({ key1: "value1" });
+		});		
+
 
 	});
 });

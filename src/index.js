@@ -20,7 +20,7 @@ const removeEmptyValuesFromObject = require("./helpers/removeEmptyValuesFromObje
 const convertActionsToObject = require("./helpers/convertActionsToObjects.helper");
 const convertObjectToActions = require("./helpers/convertObjectToActions.helpers");
 
-const { filterActions, processActionFilter, createAction } = require("./helpers/actions.helper");
+const { filterActions, processActionFilter, createAction, buildAction } = require("./helpers/actions.helper");
 
 // Define all action handlers
 // You can specify either a function or string to have an alias
@@ -42,19 +42,28 @@ const initObjectBuilder = function(initActions = []) {
 
 	let ObjectBuilder = {};
 
+	function createAction(type) {
+		return function(key, ...value) {
+			let action = buildAction(type, key, value);
+			actions.add(action);
+			// this must be returned otherwise function chaining won't work
+			return this;
+		}
+	}
+
 	// Switched from automatic generation to manual creation
 	// Some actions can be used for different reasons
 	// and can be configured during creation
-	ObjectBuilder[CONSTANTS.ACTIONS_SET] = createAction(actions, CONSTANTS.ACTIONS_SET);
-	ObjectBuilder[CONSTANTS.ACTIONS_APPEND] = createAction(actions, CONSTANTS.ACTIONS_APPEND);
-	ObjectBuilder[CONSTANTS.ACTIONS_DELETE] = createAction(actions, CONSTANTS.ACTIONS_DELETE);
-	ObjectBuilder[CONSTANTS.ACTIONS_REMOVE] = createAction(actions, CONSTANTS.ACTIONS_REMOVE);
-	ObjectBuilder[CONSTANTS.ACTIONS_INSERT_AT] = createAction(actions, CONSTANTS.ACTIONS_INSERT_AT);
-	ObjectBuilder[CONSTANTS.ACTIONS_SET_AT] = createAction(actions, CONSTANTS.ACTIONS_SET_AT);
-	ObjectBuilder[CONSTANTS.ACTIONS_INSERT_BEFORE] = createAction(actions, CONSTANTS.ACTIONS_INSERT_BEFORE);
-	ObjectBuilder[CONSTANTS.ACTIONS_INSERT_AFTER] = createAction(actions, CONSTANTS.ACTIONS_INSERT_AFTER);
-	ObjectBuilder[CONSTANTS.ACTIONS_COPY] = createAction(actions, CONSTANTS.ACTIONS_COPY);
-	ObjectBuilder[CONSTANTS.ACTIONS_UPDATE] = createAction(actions, CONSTANTS.ACTIONS_UPDATE);
+	ObjectBuilder[CONSTANTS.ACTIONS_SET] = createAction(CONSTANTS.ACTIONS_SET);
+	ObjectBuilder[CONSTANTS.ACTIONS_APPEND] = createAction(CONSTANTS.ACTIONS_APPEND);
+	ObjectBuilder[CONSTANTS.ACTIONS_DELETE] = createAction(CONSTANTS.ACTIONS_DELETE);
+	ObjectBuilder[CONSTANTS.ACTIONS_REMOVE] = createAction(CONSTANTS.ACTIONS_REMOVE);
+	ObjectBuilder[CONSTANTS.ACTIONS_INSERT_AT] = createAction(CONSTANTS.ACTIONS_INSERT_AT);
+	ObjectBuilder[CONSTANTS.ACTIONS_SET_AT] = createAction(CONSTANTS.ACTIONS_SET_AT);
+	ObjectBuilder[CONSTANTS.ACTIONS_INSERT_BEFORE] = createAction(CONSTANTS.ACTIONS_INSERT_BEFORE);
+	ObjectBuilder[CONSTANTS.ACTIONS_INSERT_AFTER] = createAction(CONSTANTS.ACTIONS_INSERT_AFTER);
+	ObjectBuilder[CONSTANTS.ACTIONS_COPY] = createAction(CONSTANTS.ACTIONS_COPY);
+	ObjectBuilder[CONSTANTS.ACTIONS_UPDATE] = createAction(CONSTANTS.ACTIONS_UPDATE);
 
 	ObjectBuilder.value = function() {
 		let res = actions.get().reduce(function(projection, action) {

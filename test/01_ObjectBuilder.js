@@ -1,6 +1,63 @@
 const { expect } = require("chai");
 const ObjectBuilder = require("../src");
 
+describe("Constants", function() {
+	const constants = require("../src/init/constants");
+
+	it("should have ACTIONS_SET", function() {
+		expect(constants.ACTIONS_SET).to.be.a("string");
+	});
+	it("should have ACTIONS_APPEND", function() {
+		expect(constants.ACTIONS_APPEND).to.be.a("string");
+	});
+	it("should have ACTIONS_DELETE", function() {
+		expect(constants.ACTIONS_DELETE).to.be.a("string");
+	});
+	it("should have ACTIONS_REMOVE", function() {
+		expect(constants.ACTIONS_REMOVE).to.be.a("string");
+	});
+	it("should have ACTIONS_INSERT_AT", function() {
+		expect(constants.ACTIONS_INSERT_AT).to.be.a("string");
+	});
+	it("should have ACTIONS_SET_AT", function() {
+		expect(constants.ACTIONS_SET_AT).to.be.a("string");
+	});
+	it("should have ACTIONS_INSERT_BEFORE", function() {
+		expect(constants.ACTIONS_INSERT_BEFORE).to.be.a("string");
+	});
+	it("should have ACTIONS_INSERT_AFTER", function() {
+		expect(constants.ACTIONS_INSERT_AFTER).to.be.a("string");
+	});
+	it("should have ACTIONS_COPY", function() {
+		expect(constants.ACTIONS_COPY).to.be.a("string");
+	});
+	it("should have ACTIONS_UPDATE", function() {
+		expect(constants.ACTIONS_UPDATE).to.be.a("string");
+	});
+});
+
+describe("Memory storage", function() {
+	const initMemoryStorage = require("../src/storage/memory.storage");
+	it("should create an empty memory storage", function() {
+		const MemoryStorage = initMemoryStorage();
+		expect(MemoryStorage.get()).to.deep.equal([]);
+	});
+	it("should create a memory storage with 1 item", function() {
+		const MemoryStorage = initMemoryStorage(["A"]);
+		expect(MemoryStorage.get()).to.deep.equal(["A"]);
+	});
+	it("should add item to memory storage", function() {
+		const MemoryStorage = initMemoryStorage();
+		MemoryStorage.add("A");
+		expect(MemoryStorage.get()).to.deep.equal(["A"]);
+	});
+	it("should clear the memory storage", function() {
+		const MemoryStorage = initMemoryStorage(["A"]);
+		MemoryStorage.clear();
+		expect(MemoryStorage.get()).to.deep.equal([]);
+	});
+});
+
 describe("ObjectBuilder", function() {
 	describe("Initialization", function() {
 		let objectBuilder = null;

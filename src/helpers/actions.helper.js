@@ -53,11 +53,3 @@ exports.buildAction = function(type, key, value) {
 	}
 	return { type, data: { key, value: [value] } };
 }
-
-exports.createAction = function(actions, type, params={}) {
-	return function(key, ...value) {
-		let action = exports.buildAction(type, key, value);
-		actions.add(action);
-		return this;
-	}
-}

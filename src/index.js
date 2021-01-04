@@ -1,6 +1,8 @@
-const objectPath = require("object-path-immutable");
-const ActionMemoryStorage = require("./ActionMemoryStorage");
+const ActionMemoryStorage = require("./storage/memory.storage");
 
+const CONSTANTS = require("./init/constants");
+
+// Load all action modules
 const initSetAction = require("./actions/set.action");
 const initDeleteAction = require("./actions/delete.action");
 const initAppendAction = require("./actions/append.action");
@@ -12,231 +14,51 @@ const initInsertAfterAction = require("./actions/insertAfter.action");
 const initCopyAction = require("./actions/copy.action");
 const initUpdateAction = require("./actions/update.action");
 
-// Define all actions that can be called
-const ACTIONS_SET = "set";
-const ACTIONS_APPEND = "append";
-const ACTIONS_DELETE = "delete";
-const ACTIONS_REMOVE = "remove";
-const ACTIONS_INSERT_AT = "insertAt";
-const ACTIONS_SET_AT = "setAt";
-const ACTIONS_INSERT_BEFORE = "insertBefore";
-const ACTIONS_INSERT_AFTER = "insertAfter";
-const ACTIONS_COPY = "copy";
-const ACTIONS_UPDATE = "update";
+// Load all helpers
+const doesItemMatch = require("./helpers/doesItemMatch.helper");
+const removeEmptyValuesFromObject = require("./helpers/removeEmptyValuesFromObject.helper");
+const convertActionsToObject = require("./helpers/convertActionsToObjects.helper");
+const convertObjectToActions = require("./helpers/convertObjectToActions.helpers");
+
+const { filterActions, processActionFilter, createAction } = require("./helpers/actions.helper");
 
 // Define all action handlers
 // You can specify either a function or string to have an alias
 const ACTION_HANDLERS = {
-	[ACTIONS_SET]: initSetAction(),
-	[ACTIONS_DELETE]: initDeleteAction(),
-	[ACTIONS_APPEND]: initAppendAction(),
-	[ACTIONS_REMOVE]: initRemoveAction(),
-	[ACTIONS_INSERT_AT]: initInsertAtAction(),
-	[ACTIONS_SET_AT]: initSetAtAction(),
-	[ACTIONS_INSERT_BEFORE]: initInsertBeforeAction({ doesItemMatch }),
-	[ACTIONS_INSERT_AFTER]: initInsertAfterAction({ doesItemMatch }),
-	[ACTIONS_COPY]: initCopyAction(),
-	[ACTIONS_UPDATE]: initUpdateAction()
+	[CONSTANTS.ACTIONS_SET]: initSetAction(),
+	[CONSTANTS.ACTIONS_DELETE]: initDeleteAction(),
+	[CONSTANTS.ACTIONS_APPEND]: initAppendAction(),
+	[CONSTANTS.ACTIONS_REMOVE]: initRemoveAction(),
+	[CONSTANTS.ACTIONS_INSERT_AT]: initInsertAtAction(),
+	[CONSTANTS.ACTIONS_SET_AT]: initSetAtAction(),
+	[CONSTANTS.ACTIONS_INSERT_BEFORE]: initInsertBeforeAction({ doesItemMatch }),
+	[CONSTANTS.ACTIONS_INSERT_AFTER]: initInsertAfterAction({ doesItemMatch }),
+	[CONSTANTS.ACTIONS_COPY]: initCopyAction(),
+	[CONSTANTS.ACTIONS_UPDATE]: initUpdateAction()
 };
-
-// Process handlers so that each action has a corresponding handler
-const ACTIONS = Object.entries(ACTION_HANDLERS).reduce(function(map, action) {
-	let name = action[0];
-	let handler = action[1];
-	switch (typeof handler) {
-		case "function": {
-			return { ...map, [name]: handler };
-		}
-		case "string": {
-			if (!(handler in ACTION_HANDLERS)) {
-				throw new Error(`Unknown action handler ${handler}`);
-			}
-			return { ...map, [name]: ACTION_HANDLERS[handler] };
-		}
-		default:
-			throw new Error(`Invalid action type ${typeof handler} for action ${name}`);
-	}
-}, {});
-
-function doesItemMatch(item, match) {
-	let values = Object.entries(match).map(function(value){
-		return { key: value[0], value: value[1] }
-	});
-	let filteredValues = values.filter(function(value){
-		let res = item[value.key];
-
-		if(typeof value.value !== "object") {
-			return res === value.value;
-		}
-
-		let [operator, comp] = Object.entries(value.value)[0];
-
-		switch(operator) {
-			case "gt":
-				return +res > +comp;
-
-			case "gte":
-				return +res >= +comp;
-
-			case "lt":
-				return +res < +comp;
-
-			case "lte":
-				return +res <= +comp;
-
-			case "eq":
-				return +res == comp;
-				
-				case "neq":
-					return +res != comp;
-
-			case "is":
-				return +res == comp;	
-
-			case "not":
-				return +res != comp;
-
-			case "in":
-				if(!Array.isArray(comp)) {
-					throw new Error("Can't apply in operator. Value is not an array!")
-				}
-				return comp.includes(res);
-
-			case "nin":
-				if(!Array.isArray(comp)) {
-					throw new Error("Can't apply in operator. Value is not an array!")
-				}
-				return !comp.includes(res);
-				
-			default:
-				throw new Error(`Unknown operator "${operator}"`);
-		}
-	});
-	return filteredValues.length === values.length;
-}
-
-function removeEmptyValuesFromObject(obj) {
-	return Object.keys(obj)
-		.filter(function(key) {
-			return obj[key] !== null;
-		})
-		.reduce(function(newObj, key) {
-		// If key doesn't hold an object, skip it
-		if(typeof obj[key] !== "object" || Array.isArray(obj[key])) {
-			return {
-				...newObj,
-				[key]: obj[key]
-			};
-		} 
-		// If it's an object, check if it contains any keys
-		if(Object.keys(obj[key]).length > 0) {
-			return {
-				...newObj,
-				[key]: removeEmptyValuesFromObject(obj[key])
-			}
-		}
-		// If there were no keys, nothing will happen
-		return newObj;
-	}, {});
-}
-
-function convertActionsToObject(actions) {
-	return Object.entries(actions).reduce(function(obj, [key, value]){
-		return objectPath.set(obj, key, value);
-	}, {});
-}
-
-function convertObjectToActions(obj) {
-  var res = {};
-  function recurse(obj, current) {
-    for (var key in obj) {
-      var value = obj[key];
-      var newKey = (current ? current + '.' + key : key);  // joined key with dot
-      if (value && typeof value === 'object' && !(value instanceof Date)) {
-        recurse(value, newKey);  // it's a nested object, so do it again
-			}
-			 else {
-        res[newKey] = value;  // it's not an object, so set the property
-      }
-    }
-  }
-  recurse(obj);
-  return Object.entries(res).reduce(function(actions, [key, value]){
-		return actions.concat(createAction(ACTIONS_SET, key, value));
-	}, []);
-}
-
-function prepareActionFilters(filters, fuzzy=false) {
-	return filters.map(function(expr){
-		if(!fuzzy) {
-			expr = `${expr[0] === "^" ? "" : "^"}${expr}${expr.slice(-1) === "$" ? "" : "$"}`;
-		}
-		return new RegExp(expr);
-	});
-}
-
-function applyActionFilters(actions, filters, inverse=false) {
-	return actions.filter(function(action) {
-		return filters.filter(function(key){
-			if(!inverse) {
-				return !action.data.key.match(key);
-			}
-			return action.data.key.match(key);
-		}).length === 0;
-	});
-}
-
-function filterActions(actions, include=[], exclude=[], fuzzy=false) {
-	let filteredActions = actions;
-
-	if(include.length > 0) {
-		include = prepareActionFilters(include, fuzzy);
-		filteredActions = applyActionFilters(filteredActions, include);
-	}
-	
-	if(exclude.length > 0) {
-		exclude = prepareActionFilters(exclude, fuzzy);
-		filteredActions = applyActionFilters(filteredActions, exclude, true);
-	}
-
-	return filteredActions;
-}
-
-function processActionFilter(filter) {
-	if(!filter) {
-		return [];
-	}
-	if(typeof filter === "string") {
-		return [filter];
-	}
-	if(Array.isArray(filter)) {
-		return filter;
-	}
-	return [filter.toString()];
-}
-
-function createAction(type, key, value) {
-	if(Array.isArray(value)) {
-		return { type, data: { key, value } };
-	}
-	return { type, data: { key, value: [value] } };
-}
 
 const initObjectBuilder = function(initActions = []) {
 	const actions = ActionMemoryStorage(initActions);
 
 	let ObjectBuilder = {};
 
-	Object.entries(ACTIONS).forEach(function(entry) {
-		ObjectBuilder[entry[0]] = function(key, ...value) {
-			actions.add(createAction(entry[0], key, value));
-			return this;
-		};
-	});
+	// Switched from automatic generation to manual creation
+	// Some actions can be used for different reasons
+	// and can be configured during creation
+	ObjectBuilder[CONSTANTS.ACTIONS_SET] = createAction(actions, CONSTANTS.ACTIONS_SET);
+	ObjectBuilder[CONSTANTS.ACTIONS_APPEND] = createAction(actions, CONSTANTS.ACTIONS_APPEND);
+	ObjectBuilder[CONSTANTS.ACTIONS_DELETE] = createAction(actions, CONSTANTS.ACTIONS_DELETE);
+	ObjectBuilder[CONSTANTS.ACTIONS_REMOVE] = createAction(actions, CONSTANTS.ACTIONS_REMOVE);
+	ObjectBuilder[CONSTANTS.ACTIONS_INSERT_AT] = createAction(actions, CONSTANTS.ACTIONS_INSERT_AT);
+	ObjectBuilder[CONSTANTS.ACTIONS_SET_AT] = createAction(actions, CONSTANTS.ACTIONS_SET_AT);
+	ObjectBuilder[CONSTANTS.ACTIONS_INSERT_BEFORE] = createAction(actions, CONSTANTS.ACTIONS_INSERT_BEFORE);
+	ObjectBuilder[CONSTANTS.ACTIONS_INSERT_AFTER] = createAction(actions, CONSTANTS.ACTIONS_INSERT_AFTER);
+	ObjectBuilder[CONSTANTS.ACTIONS_COPY] = createAction(actions, CONSTANTS.ACTIONS_COPY);
+	ObjectBuilder[CONSTANTS.ACTIONS_UPDATE] = createAction(actions, CONSTANTS.ACTIONS_UPDATE);
 
 	ObjectBuilder.value = function() {
 		let res = actions.get().reduce(function(projection, action) {
-			return ACTIONS[action.type](projection, action.data);
+			return ACTION_HANDLERS[action.type](projection, action.data);
 		}, {});
 		res = convertActionsToObject(res);
 		res = removeEmptyValuesFromObject(res);

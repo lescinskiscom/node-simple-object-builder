@@ -1,6 +1,17 @@
 const objectPath = require("object-path-immutable");
 const ActionMemoryStorage = require("./ActionMemoryStorage");
 
+const initSetAction = require("./actions/set.action");
+const initDeleteAction = require("./actions/delete.action");
+const initAppendAction = require("./actions/append.action");
+const initRemoveAction = require("./actions/remove.action");
+const initInsertAtAction = require("./actions/insertAt.action");
+const initSetAtAction = require("./actions/setAt.action");
+const initInsertBeforeAction = require("./actions/insertBefore.action");
+const initInsertAfterAction = require("./actions/insertAfter.action");
+const initCopyAction = require("./actions/copy.action");
+const initUpdateAction = require("./actions/update.action");
+
 // Define all actions that can be called
 const ACTIONS_SET = "set";
 const ACTIONS_APPEND = "append";
@@ -16,299 +27,16 @@ const ACTIONS_UPDATE = "update";
 // Define all action handlers
 // You can specify either a function or string to have an alias
 const ACTION_HANDLERS = {
-	[ACTIONS_SET]: function(projection, data) {
-		if(data.value.length === 0) {
-			throw new Error(`Can't set an empty value to ${data.key}!`);
-		}
-		projection[data.key] = data.value[0];
-		return projection;
-	},
-	[ACTIONS_DELETE]: function(projection, data) {
-		if(!data.key) {
-			throw new Error(`Can't delete key! No key specified.`);
-		}
-		let keys = [data.key];
-
-		if(data.value.length > 0) {
-			keys = keys.concat(data.value);
-		}
-		
-		keys.forEach(function(key) {
-			delete projection[key];
-		})
-
-		return projection;
-	},
-	// Deletes specified items from array
-	[ACTIONS_APPEND]: function(projection, data) {
-		if(!data.key) {
-			throw new Error(`Can't append to array! No key specified.`);
-		}
-
-		if (data.key in projection && !Array.isArray(projection[data.key])) {
-			throw new Error(`Can't append to ${data.key}! It's not an array`);
-		}
-
-		if(data.value.length === 0) {
-			throw new Error(`Can't append an empty value to ${data.key}!`);
-		}
-
-		if(!(data.key in projection)) {
-			projection[data.key] = [];
-		}
-
-		if(data.value.length === 1 && Array.isArray(data.value[0])) {
-			projection[data.key] = projection[data.key].concat(data.value[0]);
-			return projection;
-		}
-		
-		if(data.value.length > 1) {
-			projection[data.key] = projection[data.key].concat(data.value);
-			return projection;
-		}
-
-		projection[data.key] = projection[data.key].concat(data.value[0]);
-
-		return projection;
-	},
-	[ACTIONS_REMOVE]: function(projection, data) {
-
-		if(!data.key) {
-			throw new Error(`Can't remove from array! No key specified.`);
-		}
-
-		if(!(data.key in projection)) {
-			throw new Error(`Can't remove items from ${data.key}! Array doesn't exist`);
-		}
-
-		if (!Array.isArray(projection[data.key])) {
-			throw new Error(`Can't remove items from ${data.key}! It's not an array`);
-		}
-
-		if(data.value.length === 0) {
-			throw new Error(`No items have been specified to be removed from ${data.key}`);
-		}
-
-		if(data.value.length === 1 && Array.isArray(data.value[0])) {
-			projection[data.key] = projection[data.key].filter(function(item){
-				return data.value.indexOf(item) === -1;
-			});
-			return projection;
-		}
-		
-		projection[data.key] = projection[data.key].filter(function(item){
-			return data.value.indexOf(item) === -1;
-		});
-
-		return projection;
-	},
-	[ACTIONS_INSERT_AT]: function(projection, data) {
-		if(!data.key) {
-			throw new Error(`Can't insert item in array! No key specified.`);
-		}
-
-		if(!(data.key in projection)) {
-			throw new Error(`Can't insert item in array ${data.key}! Array doesn't exist`);
-		}
-
-		if (!Array.isArray(projection[data.key])) {
-			throw new Error(`Can't insert item in array ${data.key}! It's not an array`);
-		}
-		
-		let index = data.value[0];
-
-		if(typeof index !== "number") {
-			throw new Error(`Can't insert item in array ${data.key}! Index is not a number`);
-		}
-		
-		if(index < 0) {
-			throw new Error(`Can't insert item in array ${data.key}! Index can't be negative`);
-		}
-
-		projection[data.key] =  [...projection[data.key].slice(0,index), ...data.value.slice(1), ...projection[data.key].slice(index)];
-		
-		return projection;
-	},
-	[ACTIONS_SET_AT]: function(projection, data) {
-		if(!data.key) {
-			throw new Error(`Can't set item in array! No key specified.`);
-		}
-
-		if(!(data.key in projection)) {
-			throw new Error(`Can't set item in array ${data.key}! Array doesn't exist`);
-		}
-
-		if (!Array.isArray(projection[data.key])) {
-			throw new Error(`Can't set item in array ${data.key}! It's not an array`);
-		}
-		
-		let index = data.value[0];
-
-		if(typeof index !== "number") {
-			throw new Error(`Can't set item in array ${data.key}! Index is not a number`);
-		}
-		
-		if(index < 0) {
-			throw new Error(`Can't set item in array ${data.key}! Index can't be negative`);
-		}
-
-		projection[data.key] = [...projection[data.key].slice(0,index), ...data.value.slice(1), ...projection[data.key].slice(index+data.value.length-1)];
-
-		return projection;
-	},
-	[ACTIONS_INSERT_BEFORE]: function(projection, data) {
-		if(!data.key) {
-			throw new Error(`Can't insert before item in array! No key specified.`);
-		}
-
-		if(!(data.key in projection)) {
-			throw new Error(`Can't insert before item in array ${data.key}! Array doesn't exist`);
-		}
-
-		if (!Array.isArray(projection[data.key])) {
-			throw new Error(`Can't insert before item in array ${data.key}! It's not an array`);
-		}
-		
-		if(data.value.length < 2) {
-			throw new Error(`Can't insert before item in array ${data.key}! You need to specify an item and at least one value to be inserted before the item!`);
-		}
-
-		let index = -1;
-
-		if(typeof data.value[0] === "object") {
-			index = projection[data.key].findIndex(function(item){
-				return doesItemMatch(item, data.value[0]);
-			});
-		} else {
-			index = projection[data.key].indexOf(data.value[0]);
-		}
-
-		if(index < 0) {
-			throw new Error(`Can't insert before item in array ${data.key}! Item is not found!`);
-		}
-
-		projection[data.key] = [...projection[data.key].slice(0,index), ...data.value.slice(1), ...projection[data.key].slice(index)];
-
-		return projection;
-	},
-	[ACTIONS_INSERT_AFTER]: function(projection, data) {
-		if(!data.key) {
-			throw new Error(`Can't insert before item in array! No key specified.`);
-		}
-
-		if(!(data.key in projection)) {
-			throw new Error(`Can't insert before item in array ${data.key}! Array doesn't exist`);
-		}
-
-		if (!Array.isArray(projection[data.key])) {
-			throw new Error(`Can't insert before item in array ${data.key}! It's not an array`);
-		}
-		
-		if(data.value.length < 2) {
-			throw new Error(`Can't insert before item in array ${data.key}! You need to specify an item and at least one value to be inserted before the item!`);
-		}
-
-		let index = -1;
-
-		if(typeof data.value[0] === "object") {
-			index = projection[data.key].findIndex(function(item){
-				return doesItemMatch(item, data.value[0]);
-			});
-		} else {
-			index = projection[data.key].indexOf(data.value[0]);
-		}
-
-		if(index < 0) {
-			throw new Error(`Can't insert before item in array ${data.key}! Item is not found!`);
-		}
-
-		projection[data.key] = [...projection[data.key].slice(0,index+1), ...data.value.slice(1), ...projection[data.key].slice(index+1)]
-
-		return projection;
-	},
-	[ACTIONS_COPY]: function(projection, data) {
-		if(!data.key) {
-			throw new Error(`Can't copy! No key specified.`);
-		}
-
-		if(!(data.key in projection)) {
-			throw new Error(`Can't copy ${data.key}! Key doesn't exist`);
-		}
-
-		if(typeof data.key !== "string" && typeof data.key !== "number") {
-			throw new Error(`Can't copy ${data.key}! Source must be a string or a number!`);
-		}
-		
-		if(data.value.length === 0) {
-			throw new Error(`Can't copy ${data.key}! You need to specify the source and destination of keys!`);
-		}
-		
-		if(typeof data.value[0] !== "string" && typeof data.value[0] !== "number") {
-			throw new Error(`Can't copy ${data.key}! Destination must be a string or a number!`);
-		}
-		
-		let params = {};
-		
-		if(data.value.length > 1 && typeof data.value[1] === "object") {
-			params = data.value[1];
-		}
-		
-		let overwrite = "overwrite" in params ? params.overwrite : false;
-		let deleteSource = "deleteSource" in params ? params.deleteSource : false;
-
-		if(!overwrite && data.value[0] in projection) {
-			throw new Error(`Can't copy ${data.key}! Destination key already exists!`);
-		}
-
-		let value = projection[data.key];
-		projection[data.value[0]] = value;
-
-		if(deleteSource) {
-			delete projection[data.key];
-		}
-
-		return projection;
-	},
-	[ACTIONS_UPDATE]: function(projection, data) {
-		if(!data.key) {
-			throw new Error(`Can't update! No key specified.`);
-		}
-		
-		if(data.value.length === 0) {
-			throw new Error(`Can't update ${data.key}! You need to specify a value or a function!`);
-		}
-			
-		let params = {};
-		
-		if(data.value.length > 1 && typeof data.value[1] === "object") {
-			params = data.value[1];
-		}
-		
-		let fuzzy = "fuzzy" in params ? params.fuzzy : true;
-		let exact = "exact" in params ? params.exact : false;
-
-		let keys = [data.key];
-		
-		if(!exact || fuzzy) {
-			let pattern = new RegExp(data.key);
-			keys = Object.keys(projection).filter(function(key){
-				return key.match(pattern);
-			});
-		}
-
-		let value = data.value[0];
-
-		if(typeof value !== "function") {
-			value = function() {
-				return data.value[0];
-			}
-		}
-
-		return keys.reduce(function(res, key) {
-			res[key] = value(res[key], key, projection);
-			return res;
-		}, projection);
-	},
+	[ACTIONS_SET]: initSetAction(),
+	[ACTIONS_DELETE]: initDeleteAction(),
+	[ACTIONS_APPEND]: initAppendAction(),
+	[ACTIONS_REMOVE]: initRemoveAction(),
+	[ACTIONS_INSERT_AT]: initInsertAtAction(),
+	[ACTIONS_SET_AT]: initSetAtAction(),
+	[ACTIONS_INSERT_BEFORE]: initInsertBeforeAction({ doesItemMatch }),
+	[ACTIONS_INSERT_AFTER]: initInsertAfterAction({ doesItemMatch }),
+	[ACTIONS_COPY]: initCopyAction(),
+	[ACTIONS_UPDATE]: initUpdateAction()
 };
 
 // Process handlers so that each action has a corresponding handler
